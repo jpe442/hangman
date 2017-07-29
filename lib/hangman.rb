@@ -24,7 +24,7 @@ class Hangman
    @secret_word = @referee.secret_word
    @guesser.register_secret_length(@secret_length)
       
-   @board = [nil] * @secret_length
+   @board = ["_"] * @secret_length
    
   end
     
@@ -33,7 +33,7 @@ class Hangman
    # has the referee check the guesser's guess
    # updates the board
    # has the guesser handle the referee's response
-      p @board
+      print @board.join(" ")
       guess = @guesser.guess
       update = @referee.check_guess(guess)
       update_board(update, guess)
@@ -43,7 +43,7 @@ class Hangman
    
   def play
     count = 0
-    until count == 10 || !@board.include?(nil)
+    until count == 10 || !@board.include?("_")
       take_turn
       count += 1
     end
@@ -82,9 +82,9 @@ class HumanPlayer
     
   def handle_response(update, guess)
     if update.length > 0
-      "#{guess} occurs #{update.length} time..."
+      "#{guess} occurs #{update.length} times..."
     else
-      "unfortunately, the letter #{guess} does not occur"
+      "unfortunately, the letter #{guess} does not occur in the secret word"
     end
   end
   
