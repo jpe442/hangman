@@ -20,8 +20,7 @@ class Hangman
    # tells the guesser the length of the secret word
    # sets the board to be the same length as the secret length
    
-   @secret_length = @referee.pick_secret_word
-   @secret_word = @referee.secret_word
+   @secret_length = @referee.pick_secret_word 
    @guesser.register_secret_length(@secret_length)
       
    @board = ["_"] * @secret_length
@@ -34,7 +33,7 @@ class Hangman
    # updates the board
    # has the guesser handle the referee's response
       print @board.join(" ")
-      guess = @guesser.guess
+      guess = @guesser.guess(@board)
       update = @referee.check_guess(guess)
       update_board(update, guess)
       @guesser.handle_response(update, guess)
@@ -66,18 +65,44 @@ class Hangman
 end
 
 class HumanPlayer
-  
+    
+  attr_accessor :secret_word
   def initialize(name)
     @name = name
   end
 
-  def guess
+  def guess(board)
     puts "please guess a letter"
     guess = gets.chomp
   end
-  
+ 
+  def check_guess(letter)
+    guess_idx = []
+    @secret_word.chars.each_index do |i|
+      guess_idx << i if letter == @secret_word[i]
+    end
+    guess_idx    
+  end
+    
   def register_secret_length(length)
     puts "the secret word has #{length} letters in it..."
+  end
+  
+  def pick_secret_word
+    dictionary = File.readlines("dictionary.txt")
+    loop do
+      puts "Please enter a word for the other player to guess..."
+      word = gets.downcase.chomp
+
+      if dictionary.include?(word + "\n")
+        @secret_word = word
+        break
+      else 
+        puts "that is not a valid word...please try another..."
+      end
+    end
+      
+    @secret_word.length
   end
     
   def handle_response(update, guess)
@@ -92,10 +117,11 @@ end
 
 class ComputerPlayer
 
-attr_accessor :secret_word
+attr_accessor :secret_word, :guesses
     
   def initialize(dictionary = File.readlines("dictionary.txt"))
     @dictionary = dictionary
+    @guesses = []
   end
 
   def pick_secret_word
@@ -104,6 +130,28 @@ attr_accessor :secret_word
     @secret_word.length
   end
 
+  def register_secret_length(length)
+    @secret_length = length
+  end
+    
+  def guess(board)
+    puts "please enter a guess..."
+    guess_valid = false
+    until guess_valid == true
+      guess = ("a".."z").to_a.sample
+      unless @guesses.include?(guess)
+        @guesses << guess
+        guess_valid = true
+      end
+    end
+      
+    guess
+  end
+    
+  def handle_response(guess, update)
+    
+  end
+    
   def check_guess(letter)
     # accepts a letter as an argument
     # returns the indicies of the found letters
@@ -118,6 +166,9 @@ attr_accessor :secret_word
 
 end
 
-new_game = Hangman.new
-new_game.setup
-new_game.play
+
+if $PROGRAM_NAME == __FILE__
+    new_game = Hangman.new(guesser: ComputerPlayer.new, referee: HumanPlayer.new("bob"))
+    new_game.setup
+    new_game.play
+end
