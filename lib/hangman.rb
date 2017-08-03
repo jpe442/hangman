@@ -33,10 +33,11 @@ class Hangman
    # updates the board
    # has the guesser handle the referee's response
       print @board.join(" ")
-      guess = @guesser.guess(@board)
+     p guess = @guesser.guess(@board)
       update = @referee.check_guess(guess)
       update_board(update, guess)
-      @guesser.handle_response(update, guess)
+      @guesser.handle_response(guess, update)
+    
       
   end
    
@@ -105,7 +106,7 @@ class HumanPlayer
     @secret_word.length
   end
     
-  def handle_response(update, guess)
+  def handle_response(guess, update)
     if update.length > 0
       "#{guess} occurs #{update.length} times..."
     else
@@ -117,10 +118,11 @@ end
 
 class ComputerPlayer
 
-attr_accessor :secret_word, :guesses
+attr_accessor :secret_word, :guesses, :candidate_words
     
   def initialize(dictionary = File.readlines("dictionary.txt"))
     @dictionary = dictionary
+    @candidate_words = dictionary
     @guesses = []
   end
 
@@ -132,24 +134,44 @@ attr_accessor :secret_word, :guesses
 
   def register_secret_length(length)
     @secret_length = length
+    @candidate_words.reject! {|word| word.strip.length > @secret_length || word.length < @secret_length}
   end
     
   def guess(board)
-    puts "please enter a guess..."
-    guess_valid = false
-    until guess_valid == true
-      guess = ("a".."z").to_a.sample
-      unless @guesses.include?(guess)
-        @guesses << guess
-        guess_valid = true
+    puts " please enter a guess..."
+    # needs to return the most common letter amongst #candidate_words
+ p  alpha_freq = Hash.new(0)
+    @candidate_words.each do |word|
+      word.strip.chars.each do |ch|
+        alpha_freq[ch] += 1 unless board.include?(ch) || @guesses.include?(ch)
       end
     end
-      
-    guess
+    
+ p   guess = alpha_freq.sort_by {|k,v| v }
+ p   guess = guess[-1][0]
+ p   @guesses << guess
+ p   guess
+            
   end
     
   def handle_response(guess, update)
     
+    unless update.length == 0
+      @candidate_words.select! do |word|
+        word.strip.count(guess) == update.length
+      end
+        
+      update.each do |idx|
+        @candidate_words.select! do |word|
+          word.strip[idx] == guess
+        end
+      end
+    else 
+      @candidate_words.reject! do |word|
+        word.strip.include?(guess)
+      end
+    end
+      
   end
     
   def check_guess(letter)
